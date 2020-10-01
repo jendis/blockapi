@@ -22,19 +22,27 @@ class TrezorAPI(BlockchainAPI):
     xpub_support = True
 
     supported_requests = {
-        'get_balance': '/api/v2/address/{address}',
-        'get_balance_xpub': '/api/v2/xpub/{address}',
-        'get_txs': '/api/v2/utxo/{address}?confirmed={confirmed}',
+        'get_address': '/api/v2/address/{address}?page={page}&pageSize={page_size}&details={details}&contract= \
+                         {contract_address}',
+        'get_xpub': '/api/v2/xpub/{address}?page={page}&pageSize={page_size}&details={details}&tokens={tokens}',
         'get_tx': '/api/v2/tx/{tx_hash}',
     }
 
     def get_balance(self):
         if len(self.address) == 111:
-            response = self.request('get_balance_xpub',
-                                    address=self.address)
+            response = self.request('get_xpub',
+                                    address=self.address,
+                                    page = None,
+                                    page_size=None,
+                                    details=None,
+                                    tokens=None)
         else:
-            response = self.request('get_balance',
-                                    address=self.address)
+            response = self.request('get_address',
+                                    address=self.address,
+                                    page=None,
+                                    page_size=None,
+                                    details=None,
+                                    contract_address=None)
 
         if not response:
             return None
@@ -43,15 +51,26 @@ class TrezorAPI(BlockchainAPI):
         return [{'symbol': self.symbol, 'amount': retval}]
 
     def get_txs(self, offset=None, limit=None, unconfirmed=False):
-        response = self.request('get_txs',
+        if len(self.address) == 111:
+            return self.request('get_xpub',
                                 address=self.address,
-                                confirmed=not unconfirmed)
+                                page=offset,
+                                page_size=limit,
+                                details='txs',
+                                tokens='used')
+        else:
+            response = self.request('get_address',
+                                address=self.address,
+                                page=offset,
+                                page_size=limit,
+                                details='txids',
+                                contract_address=None)
 
-        return [self.parse_tx(tx) for tx in response]
+            return [self.parse_tx(tx) for tx in response['txids']]
 
     def parse_tx(self, tx):
         txdata = self.request('get_tx',
-                              tx_hash=tx['txid'])
+                              tx_hash=tx)
 
         if self.address in txdata['vin'][0]['addresses']:
             direction = 'outgoing'
@@ -64,7 +83,7 @@ class TrezorAPI(BlockchainAPI):
             'to_address': txdata['vout'][0]['addresses'],
             'amount': float(txdata['value']) * self.coef,
             'fee': float(txdata['fees']) * self.coef,
-            'hash': tx['txid'],
+            'hash': tx,
             'confirmed': txdata['confirmations'],
             'is_error': False,
             'type': 'normal',
