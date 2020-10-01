@@ -22,21 +22,18 @@ def get_balances(xpub_data):
         time = tx['blockTime']
         amount = -get_transfer(addresses, tx['vin'])
         amount += get_transfer(addresses, tx['vout'])
-        balances.append((time, 'BTC', amount))
+        balances.append([time, 'BTC', amount])
 
-    balances.sort(key=lambda tup: tup[0], reverse=False)
+    balances.sort(key=lambda r: r[0], reverse=False)
 
+    for i in range(1, len(balances)):
+        balances[i][2] = balances[i - 1][2] + balances[i][2]
     return balances
 
 xpub = sys.argv[1]
-#'xpub6CUGRUonZSQ4TWtTMmzXdrXDtypWKiKrhko4egpiMZbpiaQL2jkwSB1icqYh2cfDfVxdx4df189oLKnC5fSwqPfgyP3hooxujYzAu3fDVmz'
 xpub_data = query(xpub)
 balances = get_balances(xpub_data)
 
-assert int(xpub_data['balance']) == sum(e[2] for e in balances)
+assert int(xpub_data['balance']) == balances[-1][2]
 
 print(balances)
-
-
-
-
