@@ -1,4 +1,5 @@
 import blockapi
+import sys
 
 def get_transfer(my_addrs, txs):
     amount = 0
@@ -27,7 +28,8 @@ def get_balances(xpub_data):
 
     return balances
 
-xpub = 'xpub6CUGRUonZSQ4TWtTMmzXdrXDtypWKiKrhko4egpiMZbpiaQL2jkwSB1icqYh2cfDfVxdx4df189oLKnC5fSwqPfgyP3hooxujYzAu3fDVmz'
+xpub = sys.argv[1]
+#'xpub6CUGRUonZSQ4TWtTMmzXdrXDtypWKiKrhko4egpiMZbpiaQL2jkwSB1icqYh2cfDfVxdx4df189oLKnC5fSwqPfgyP3hooxujYzAu3fDVmz'
 xpub_data = query(xpub)
 balances = get_balances(xpub_data)
 
